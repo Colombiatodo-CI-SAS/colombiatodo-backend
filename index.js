@@ -168,7 +168,10 @@ fastify.post('/create-preference', async (request, reply) => {
  */
 const start = async () => {
     try {
-        await fastify.listen({ port: fastify.config.PORT });
+        await fastify.listen({ 
+            port: fastify.config.PORT,
+            host: '0.0.0.0'
+        });
         console.log(`Server listening on port ${fastify.config.PORT}`);
     } catch (err) {
         fastify.log.error(err);
