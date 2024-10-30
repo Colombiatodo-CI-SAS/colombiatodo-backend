@@ -4,6 +4,7 @@ import fastifyEnv from '@fastify/env';
 import Fastify from 'fastify';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { Resend } from 'resend';
+import contactTemplate from './emails/contactTemplate.js';
 
 const fastify = Fastify({
     logger: true
@@ -62,6 +63,7 @@ fastify.get('/', async (request, reply) => {
     return { hello: 'world' };
 });
 
+
 // Contact Form Submission
 fastify.post('/contact', async (request, reply) => {
     const body = request.body;
@@ -71,7 +73,7 @@ fastify.post('/contact', async (request, reply) => {
             from: "Colombiatodo CI SAS <contacto@colombiatodo.com>",
             to: [email],
             subject: `Contacto ColombiaTodo CI SAS`,
-            html: `${name}, gracias por contactarnos, nos comunicaremos contigo a la brevedad posible.`
+            html: contactTemplate({ name, email })
         });
 
         if (error) {
