@@ -65,7 +65,7 @@ fastify.get('/', async (request, reply) => {
 // Contact Form Submission
 fastify.post('/contact', async (request, reply) => {
     const body = request.body;
-    const { name, email } = body.body;
+    const { name, email } = body;
     try {
         const { data, error } = await resendContact.emails.send({
             from: "Colombiatodo CI SAS <contacto@colombiatodo.com>",
