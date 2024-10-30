@@ -1,4 +1,5 @@
 // ESM
+import fastifyCors from '@fastify/cors';
 import fastifyEnv from '@fastify/env';
 import Fastify from 'fastify';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
@@ -36,10 +37,20 @@ const options = {
     dotenv: true
 };
 
+
 await fastify.register(fastifyEnv, options);
 
 // Wait for the ready event before starting the server
 await fastify.after();
+
+const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000'];
+
+fastify.register(fastifyCors, {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+})
 
 // Initialize env variables
 const resendContact = new Resend(fastify.config.RESEND_CONTACT_API_KEY);
