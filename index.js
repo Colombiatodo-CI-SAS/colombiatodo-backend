@@ -1,7 +1,7 @@
 // ESM
 import fastifyEnv from '@fastify/env';
 import Fastify from 'fastify';
-import MercadoPagoConfig, { Preference } from 'mercadopago';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { Resend } from 'resend';
 
 const fastify = Fastify({
@@ -11,13 +11,16 @@ const fastify = Fastify({
 //Define schema for validation
 const schema = {
     type: 'object',
-    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN'],
+    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN'],
     properties: {
         PORT: {
             type: 'string',
             default: '3000'
         },
         RESEND_CONTACT_API_KEY: {
+            type: 'string'
+        },
+        RESEND_ORDER_API_KEY: {
             type: 'string'
         },
         MERCADO_PAGO_ACCESS_TOKEN: {
