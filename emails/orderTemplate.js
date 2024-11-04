@@ -10,6 +10,19 @@ export default function OrderMailTemplate(order) {
         paymentId,
     } = order;
 
+    const orderItems = items.map((item, index) => {
+        return `
+        <li>
+            <img src=${item.picture_url} alt=${item.title} />
+            ${item.title} - ${item.quantity} x ${item.unit_price.toLocaleString("es-CO", {
+                style: "currency",
+                currency: "COP",
+            })}
+        </li>
+        `
+    }
+    )
+
     return `
     <div>
             <header>
@@ -24,9 +37,9 @@ export default function OrderMailTemplate(order) {
                 <h3>Resumen de pedido</h3>
                 <p>
                     <span>Total:</span> ${transactionAmount.toLocaleString("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                    })}
+        style: "currency",
+        currency: "COP",
+    })}
                 </p>
 
                 <div>
@@ -39,22 +52,13 @@ export default function OrderMailTemplate(order) {
                 <p><span>Email Mercado Pago:</span> ${payer.email}</p>
 
                 <div>
-                    <h3Detalles de los Items</h3>
+                    <h3>Detalles de los Items</h3>
                     <ul>
-                        ${items.map((item, index) => (
-                            <li>
-                                <img src={item.picture_url} alt={item.title} />
-                                {item.title} - {item.quantity} x {item.unit_price.toLocaleString("es-CO", {
-                                    style: "currency",
-                                    currency: "COP",
-                                })}
-                            </li>
-                        ))}
+                        ${orderItems.join("")}
                     </ul>
                 </div>
 
                 <div>
-                    <h3>Detalles del Pedido</h3>
                     <p><strong>ID del Pago:</strong> ${paymentId}</p>
                 </div>
             </div>
