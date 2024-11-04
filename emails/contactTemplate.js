@@ -1,5 +1,5 @@
 export default function contactTemplate(contactData) {
-    const { name, email } = contactData;
+    const { name, email, company, country, topic, message } = contactData;
     return `
             <div>
             <main>
@@ -9,7 +9,10 @@ export default function contactTemplate(contactData) {
                     <h3>Detalles de tu contacto:</h3>
                     <p><strong>Nombre:</strong> ${name}</p>
                     <p><strong>Correo Electrónico:</strong> ${email}</p>
-
+                    <p><strong>Empresa:</strong> ${company || "No especificada"}</p>
+                    <p><strong>País:</strong> ${country}</p>
+                    <p><strong>Asunto:</strong> ${topic}</p>
+                    <p><strong>Requerimiento:</strong> ${message}</p>
                 </div>
                 <p>Nos pondremos en contacto contigo a la brevedad.</p>
                 <p>Saludos cordiales,<br />El equipo de Colombiatodo CI SAS</p>

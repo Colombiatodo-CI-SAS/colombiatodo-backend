@@ -2,9 +2,10 @@
 import fastifyCors from '@fastify/cors';
 import fastifyEnv from '@fastify/env';
 import Fastify from 'fastify';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import { Resend } from 'resend';
 import contactTemplate from './emails/contactTemplate.js';
+import OrderMailTemplate from './emails/orderTemplate.js';
 
 const fastify = Fastify({
     logger: true
@@ -17,7 +18,7 @@ const schema = {
     properties: {
         PORT: {
             type: 'string',
-            default: '3000'
+            default: '4000'
         },
         RESEND_CONTACT_API_KEY: {
             type: 'string'
@@ -44,7 +45,7 @@ await fastify.register(fastifyEnv, options);
 // Wait for the ready event before starting the server
 await fastify.after();
 
-const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000'];
+const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000', 'https://tnk88xgl-3000.use.devtunnels.ms'];
 
 fastify.register(fastifyCors, {
     origin: allowedOrigins,
@@ -73,7 +74,7 @@ fastify.post('/contact', async (request, reply) => {
             from: "Colombiatodo CI SAS <contacto@colombiatodo.com>",
             to: [email],
             subject: `Contacto ColombiaTodo CI SAS`,
-            html: contactTemplate({ name, email })
+            html: contactTemplate(body)
         });
 
         if (error) {
@@ -98,18 +99,14 @@ fastify.post('/contact', async (request, reply) => {
 // Order Form Submission
 fastify.post('/order', async (request, reply) => {
     const body = request.body;
-    const { order, shippingData } = body.body;
+    const { order, shippingData } = body;
     const { email } = shippingData
     try {
         const { data, error } = await resendOrder.emails.send({
             from: "Colombiatodo CI SAS <pedidos@colombiatodo.com>",
             to: [email],
             subject: `Orden ColombiaTodo CI SAS`,
-            html: `
-            <h1>Orden ColombiaTodo CI SAS</h1>
-            <p>Gracias por tu orden, en breve nos comunicaremos contigo para confirmar tu orden.</p>
-            <p>Orden: ${order}</p>
-            `
+            html: OrderMailTemplate(order)
         });
         if (error) {
             return reply.status(500).send({
@@ -134,7 +131,7 @@ fastify.post('/order', async (request, reply) => {
 // MercadoPago Create Preference
 fastify.post('/create-preference', async (request, reply) => {
     const reqBody = request.body;
-    const { items } = reqBody.body;
+    const { items } = reqBody
     const { cartItems, deliveryCompany } = items;
 
     const cart = cartItems.map(({ title, quantity, price, image }) => ({
@@ -155,9 +152,9 @@ fastify.post('/create-preference', async (request, reply) => {
     const body = {
         items: itemsBody,
         back_urls: {
-            success: `${process.env.NEXT_PUBLIC_TUNNEL_URL}payment/success`,
-            pending: process.env.NEXT_PUBLIC_TUNNEL_URL,
-            failure: process.env.NEXT_PUBLIC_TUNNEL_URL,
+            success: `https://tnk88xgl-3000.use.devtunnels.ms/payment/success`,
+            pending: "https://tnk88xgl-3000.use.devtunnels.ms/",
+            failure: "https://tnk88xgl-3000.use.devtunnels.ms/",
         },
         auto_return: "approved",
     }
@@ -176,12 +173,37 @@ fastify.post('/create-preference', async (request, reply) => {
     }
 })
 
+fastify.post('/payment', async (request, reply) => {
+    console.log("Post payment");
+    const body = request.body;
+
+    const { paymentId } = body;
+
+    try {
+        const payment = await new Payment(clientMercadoPago).get({ id: paymentId });
+
+        // Guarda el pedido en la base de datos y envía un correo con el resumen del pedido aquí
+        // ...
+
+        return reply.status(200).send({
+            message: 'Payment received successfully',
+            data: { payment, success: true }
+        });
+    } catch (error) {
+        console.error('Error fetching payment: ', error);
+        return reply.status(500).send({
+            message: 'Error fetching payment',
+            error: error
+        });
+    }
+})
+
 /**
  * Inicia el servidor después de que las rutas se hayan definido
  */
 const start = async () => {
     try {
-        await fastify.listen({ 
+        await fastify.listen({
             port: fastify.config.PORT,
             host: '0.0.0.0'
         });
