@@ -45,7 +45,9 @@ await fastify.register(fastifyEnv, options);
 // Wait for the ready event before starting the server
 await fastify.after();
 
-const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000', 'https://tnk88xgl-3000.use.devtunnels.ms'];
+const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000', fastify.config.FRONT_END_TUNNEL];
+
+const backUrl = fastify.config.NODE_ENV === 'production' ? "https://colombiatodo.com/" : fastify.config.FRONT_END_TUNNEL;
 
 fastify.register(fastifyCors, {
     origin: allowedOrigins,
@@ -152,9 +154,9 @@ fastify.post('/create-preference', async (request, reply) => {
     const body = {
         items: itemsBody,
         back_urls: {
-            success: `https://tnk88xgl-3000.use.devtunnels.ms/payment/success`,
-            pending: "https://tnk88xgl-3000.use.devtunnels.ms/",
-            failure: "https://tnk88xgl-3000.use.devtunnels.ms/",
+            success: `${backUrl}/payment/success`,
+            pending: backUrl,
+            failure: backUrl,
         },
         auto_return: "approved",
     }
