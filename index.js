@@ -50,11 +50,20 @@ const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colo
 const backUrl = fastify.config.NODE_ENV === 'production' ? "https://colombiatodo.com/" : fastify.config.FRONT_END_TUNNEL;
 
 fastify.register(fastifyCors, {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-})
+});
 
 // Initialize env variables
 const resendContact = new Resend(fastify.config.RESEND_CONTACT_API_KEY);
