@@ -14,7 +14,7 @@ const fastify = Fastify({
 //Define schema for validation
 const schema = {
     type: 'object',
-    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN'],
+    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN', 'NODE_ENV', 'FRONT_END_TUNNEL'],
     properties: {
         PORT: {
             type: 'string',
@@ -27,6 +27,12 @@ const schema = {
             type: 'string'
         },
         MERCADO_PAGO_ACCESS_TOKEN: {
+            type: 'string'
+        },
+        NODE_ENV: {
+            type: 'string'
+        },
+        FRONT_END_TUNNEL: {
             type: 'string'
         }
     }
@@ -47,23 +53,14 @@ await fastify.after();
 
 const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000', fastify.config.FRONT_END_TUNNEL];
 
+
 const backUrl = fastify.config.NODE_ENV === 'production' ? "https://colombiatodo.com/" : fastify.config.FRONT_END_TUNNEL;
 
 fastify.register(fastifyCors, {
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Accept', 'Content-Type', 'Authorization'],
     credentials: true,
-    strictPreflight: true,
 });
 
 // Initialize env variables
@@ -79,6 +76,7 @@ fastify.get('/', async (request, reply) => {
 
 // Contact Form Submission
 fastify.post('/contact', async (request, reply) => {
+    
     const body = request.body;
     const { name, email } = body;
     try {
