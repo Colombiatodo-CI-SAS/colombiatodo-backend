@@ -162,7 +162,7 @@ fastify.post('/create-preference', async (request, reply) => {
     const body = {
         items: itemsBody,
         back_urls: {
-            success: `${backUrl}/payment/success`,
+            success: `${backUrl}payment/success`,
             pending: backUrl,
             failure: backUrl,
         },
