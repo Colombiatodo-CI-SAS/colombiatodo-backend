@@ -14,7 +14,7 @@ const fastify = Fastify({
 //Define schema for validation
 const schema = {
     type: 'object',
-    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN', 'NODE_ENV', 'FRONT_END_TUNNEL'],
+    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN_DEV', 'MERCADO_PAGO_ACCESS_TOKEN_PROD', 'NODE_ENV', 'FRONT_END_TUNNEL'],
     properties: {
         PORT: {
             type: 'string',
@@ -26,7 +26,10 @@ const schema = {
         RESEND_ORDER_API_KEY: {
             type: 'string'
         },
-        MERCADO_PAGO_ACCESS_TOKEN: {
+        MERCADO_PAGO_ACCESS_TOKEN_DEV: {
+            type: 'string'
+        },
+        MERCADO_PAGO_ACCESS_TOKEN_PROD: {
             type: 'string'
         },
         NODE_ENV: {
@@ -64,9 +67,10 @@ fastify.register(fastifyCors, {
 });
 
 // Initialize env variables
+const mpAccessToken = fastify.config.NODE_ENV === 'production' ? fastify.config.MERCADO_PAGO_ACCESS_TOKEN_PROD : fastify.config.MERCADO_PAGO_ACCESS_TOKEN_DEV;
 const resendContact = new Resend(fastify.config.RESEND_CONTACT_API_KEY);
 const resendOrder = new Resend(fastify.config.RESEND_ORDER_API_KEY);
-const clientMercadoPago = new MercadoPagoConfig({ accessToken: fastify.config.MERCADO_PAGO_ACCESS_TOKEN });
+const clientMercadoPago = new MercadoPagoConfig({ accessToken: mpAccessToken });
 
 // Routes
 fastify.get('/', async (request, reply) => {
