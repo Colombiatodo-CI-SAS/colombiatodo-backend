@@ -6,6 +6,7 @@ import { MercadoPagoConfig, Payment, Preference } from 'mercadopago';
 import { Resend } from 'resend';
 import contactTemplate from './emails/contactTemplate.js';
 import OrderMailTemplate from './emails/orderTemplate.js';
+import QuoteNameTemplate from './emails/quoteTemplate.js';
 
 const fastify = Fastify({
     logger: true
@@ -14,7 +15,7 @@ const fastify = Fastify({
 //Define schema for validation
 const schema = {
     type: 'object',
-    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN_DEV', 'MERCADO_PAGO_ACCESS_TOKEN_PROD', 'NODE_ENV', 'FRONT_END_TUNNEL'],
+    required: ['PORT', 'RESEND_CONTACT_API_KEY', 'RESEND_ORDER_API_KEY', 'MERCADO_PAGO_ACCESS_TOKEN_DEV', 'MERCADO_PAGO_ACCESS_TOKEN_PROD', 'NODE_ENV', 'FRONT_END_TUNNEL', 'RESEND_QUOTE_API_KEY'],
     properties: {
         PORT: {
             type: 'string',
@@ -24,6 +25,9 @@ const schema = {
             type: 'string'
         },
         RESEND_ORDER_API_KEY: {
+            type: 'string'
+        },
+        RESEND_QUOTE_API_KEY: {
             type: 'string'
         },
         MERCADO_PAGO_ACCESS_TOKEN_DEV: {
@@ -54,8 +58,7 @@ await fastify.register(fastifyEnv, options);
 // Wait for the ready event before starting the server
 await fastify.after();
 
-const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : ['http://localhost:3000', fastify.config.FRONT_END_TUNNEL];
-
+const allowedOrigins = fastify.config.NODE_ENV === 'production' ? ['https://colombiatodo.com', 'https://www.colombiatodo.com'] : true;
 
 const backUrl = fastify.config.NODE_ENV === 'production' ? "https://colombiatodo.com/" : fastify.config.FRONT_END_TUNNEL;
 
@@ -70,6 +73,7 @@ fastify.register(fastifyCors, {
 const mpAccessToken = fastify.config.NODE_ENV === 'production' ? fastify.config.MERCADO_PAGO_ACCESS_TOKEN_PROD : fastify.config.MERCADO_PAGO_ACCESS_TOKEN_DEV;
 const resendContact = new Resend(fastify.config.RESEND_CONTACT_API_KEY);
 const resendOrder = new Resend(fastify.config.RESEND_ORDER_API_KEY);
+const resendQuote = new Resend(fastify.config.RESEND_QUOTE_API_KEY);
 const clientMercadoPago = new MercadoPagoConfig({ accessToken: mpAccessToken });
 
 // Routes
@@ -86,9 +90,44 @@ fastify.post('/contact', async (request, reply) => {
     try {
         const { data, error } = await resendContact.emails.send({
             from: "Colombiatodo CI SAS <contacto@colombiatodo.com>",
-            to: [email],
-            subject: `Contacto ColombiaTodo CI SAS`,
+            to: email,
+            bcc: "contacto@colombiatodo.com",
+            subject: `Contacto Colombiatodo CI SAS`,
             html: contactTemplate(body)
+        });
+
+        if (error) {
+            return reply.status(500).send({
+                message: 'Error sending email',
+                error: error
+            });
+        }
+        return reply.status(200).send({
+            message: 'Email sent successfully',
+            data: { data, success: true }
+        });
+
+    } catch (error) {
+        return reply.status(500).send({
+            message: 'Error sending email',
+            error: error
+        });
+    }
+});
+
+// Quote Form Submission
+fastify.post('/quote-request', async (request, reply) => {
+    
+    const body = request.body;
+    const { email } = body;
+    console.log(request.body)
+    try {
+        const { data, error } = await resendQuote.emails.send({
+            from: "Colombiatodo CI SAS <contacto@colombiatodo.com>",
+            to: email,
+            bcc: "contacto@colombiatodo.com",
+            subject: `Cotización Colombiatodo CI SAS`,
+            html: QuoteNameTemplate(body)
         });
 
         if (error) {
@@ -118,8 +157,9 @@ fastify.post('/order', async (request, reply) => {
     try {
         const { data, error } = await resendOrder.emails.send({
             from: "Colombiatodo CI SAS <pedidos@colombiatodo.com>",
-            to: [email],
-            subject: `Orden ColombiaTodo CI SAS`,
+            to: email,
+            bcc: "pedidos@colombiatodo.com",
+            subject: `Orden Colombiatodo CI SAS`,
             html: OrderMailTemplate(order)
         });
         if (error) {
@@ -190,7 +230,8 @@ fastify.post('/create-preference', async (request, reply) => {
 fastify.post('/payment', async (request, reply) => {
     console.log("Post payment");
     const body = request.body;
-
+    console.log(body);
+    
     const { paymentId } = body;
 
     try {
